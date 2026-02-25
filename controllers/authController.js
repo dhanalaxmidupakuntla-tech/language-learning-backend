@@ -8,18 +8,13 @@ export const registerUser = async (req, res) => {
     const { name, email, password } = req.body;
 
     if (!name || !email || !password) {
-      return res.status(400).json({ message: "All fields are required" });
+      return errorResponse(res, "All fields are required", 400);
     }
 
-    const { data: existingUser, error: fetchError } =
-      await getUserByEmail(email);
+    const { data: existingUser } = await getUserByEmail(email);
 
     if (existingUser) {
-      return res.status(400).json({ message: "User already exists" });
-    }
-
-    if (fetchError && fetchError.code !== "PGRST116") {
-      throw fetchError;
+      return errorResponse(res, "User already exists", 400);
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -30,20 +25,24 @@ export const registerUser = async (req, res) => {
       password: hashedPassword,
       level: "Beginner",
       streak_count: 0,
-      total_points: 0
+      total_points: 0,
     });
 
-    if (error) throw error;
+    if (error) {
+      console.error("Create user error:", error.message);
+      return errorResponse(res, "Failed to create user", 500);
+    }
 
-    res.status(201).json({
-      success: true,
-      message: "User registered",
-      user: data,
-    });
+    return successResponse(
+      res,
+      "User registered successfully",
+      data,
+      201
+    );
 
   } catch (error) {
-    console.error("Register error:", error);
-    res.status(500).json({ error: error.message });
+    console.error("Register error:", error.message);
+    return errorResponse(res, "Server error", 500);
   }
 };
 
@@ -52,23 +51,24 @@ export const loginUser = async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ message: "Email and password required" });
+      return errorResponse(res, "Email and password required", 400);
     }
 
-    const { data: user, error } = await getUserByEmail(email);
+    const { data: user } = await getUserByEmail(email);
 
-    if (error || !user) {
-      return res.status(400).json({ message: "Invalid credentials" });
+    if (!user) {
+      return errorResponse(res, "Invalid credentials", 400);
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
-      return res.status(400).json({ message: "Invalid credentials" });
+      return errorResponse(res, "Invalid credentials", 400);
     }
 
     if (!process.env.JWT_SECRET) {
-      throw new Error("JWT_SECRET not defined");
+      console.error("JWT_SECRET missing");
+      return errorResponse(res, "Server misconfiguration", 500);
     }
 
     const token = jwt.sign(
@@ -77,15 +77,13 @@ export const loginUser = async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    res.status(200).json({
-      success: true,
-      message: "Login successful",
+    return successResponse(res, "Login successful", {
       token,
       user,
     });
 
   } catch (error) {
     console.error("Login error:", error.message);
-    res.status(500).json({ message: "Server error" });
+    return errorResponse(res, "Server error", 500);
   }
 };
