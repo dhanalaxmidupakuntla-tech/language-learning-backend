@@ -1,7 +1,7 @@
 import supabase from "../config/supabaseClient.js";
 
 export const createUser = async (userData) => {
-  return await supabase.from("users").insert([userData]).select();
+  return await supabase.from("users").insert([userData]).select().single();
 };
 
 export const getAllUsers = async () => {
@@ -23,7 +23,7 @@ export const getUserByEmail = async (email) => {
     .from("users")
     .select("*")
     .eq("email", email)
-    .single();
+    .limit(1);
 };
 
 export const updateUserPoints = async (userId, points) => {
