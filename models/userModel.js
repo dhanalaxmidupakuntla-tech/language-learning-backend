@@ -1,7 +1,7 @@
 import supabase from "../config/supabaseClient.js";
 
 export const createUser = async (userData) => {
-  return await supabase.from("users").insert([userData]).select();
+  return await supabase.from("users").insert([{username: name, email, password}]).select();
 };
 
 export const getAllUsers = async () => {
