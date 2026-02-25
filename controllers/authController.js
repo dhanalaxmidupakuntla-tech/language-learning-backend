@@ -5,36 +5,25 @@ import { successResponse, errorResponse } from "../utils/responseHandler.js";
 
 export const registerUser = async (req, res) => {
   try {
-    console.log("Register body: ", req.body)
     const { name, email, password } = req.body;
 
-    // ✅ Validate input
     if (!name || !email || !password) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    // ✅ Check if user already exists
     const { data: existingUser, error: fetchError } =
       await getUserByEmail(email);
 
-    // If user FOUND → block registration
     if (existingUser) {
       return res.status(400).json({ message: "User already exists" });
     }
 
-    // If error is NOT "no rows found", throw it
     if (fetchError && fetchError.code !== "PGRST116") {
       throw fetchError;
     }
 
-    if (data.length > 0 ){
-      return res.status(400).json({message: "User already exists"})
-    }
-
-    // 🔐 Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // ✅ Create user
     const { data, error } = await createUser({
       name,
       email,
@@ -49,7 +38,7 @@ export const registerUser = async (req, res) => {
     res.status(201).json({
       success: true,
       message: "User registered",
-      user: data
+      user: data,
     });
 
   } catch (error) {
