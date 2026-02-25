@@ -5,6 +5,7 @@ import { successResponse, errorResponse } from "../utils/responseHandler.js";
 
 export const registerUser = async (req, res) => {
   try {
+    console.log("Register body: ", req.body)
     const { name, email, password } = req.body;
 
     // ✅ Validate input
@@ -61,16 +62,24 @@ export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const { data: user } = await getUserByEmail(email);
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password required" });
+    }
 
-    if (!user) {
-      return errorResponse(res, "Invalid credentials", 400);
+    const { data: user, error } = await getUserByEmail(email);
+
+    if (error || !user) {
+      return res.status(400).json({ message: "Invalid credentials" });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
-      return errorResponse(res, "Invalid credentials", 400);
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    if (!process.env.JWT_SECRET) {
+      throw new Error("JWT_SECRET not defined");
     }
 
     const token = jwt.sign(
@@ -79,9 +88,15 @@ export const loginUser = async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    return successResponse(res, "Login successful", { token, user });
+    res.status(200).json({
+      success: true,
+      message: "Login successful",
+      token,
+      user,
+    });
 
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("Login error:", error.message);
+    res.status(500).json({ message: "Server error" });
   }
 };

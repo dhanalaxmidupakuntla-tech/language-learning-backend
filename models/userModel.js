@@ -23,7 +23,7 @@ export const getUserByEmail = async (email) => {
     .from("users")
     .select("*")
     .eq("email", email)
-    .limit(1);
+    .maybeSingle();
 };
 
 export const updateUserPoints = async (userId, points) => {
