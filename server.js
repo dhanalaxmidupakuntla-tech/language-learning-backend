@@ -12,6 +12,7 @@ import streakRoutes from "./routes/streakRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import leaderboardRoutes from "./routes/leaderboardRoutes.js";
 import analyticsRoutes from "./routes/analyticsRoutes.js"
+import badgeRoutes from "./routes/badgeRoutes.js";
 
 dotenv.config();
 
@@ -30,6 +31,7 @@ app.use("/api/streak", streakRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/leaderboard", leaderboardRoutes);
 app.use("/api/analytics", analyticsRoutes)
+app.use("/api/badges", badgeRoutes);
 app.use(errorHandler);
 
 app.get("/", (req, res) => {
