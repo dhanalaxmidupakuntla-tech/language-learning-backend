@@ -4,7 +4,7 @@ import { fetchLessons, fetchLessonById } from "../controllers/lessonController.j
 
 const router = express.Router();
 
-router.get("/", fetchLessons);
-router.get("/:id", fetchLessonById);
+router.get("/", authMiddleware, fetchLessons);
+router.get("/:id", authMiddleware, fetchLessonById);
 
 export default router;
