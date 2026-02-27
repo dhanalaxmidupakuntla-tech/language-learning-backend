@@ -3,12 +3,25 @@ import { successResponse } from "../utils/responseHandler.js";
 
 export const fetchFlashcards = async (req, res, next) => {
   try {
-    const { level } = req.query;
+    const { level = "Beginner" } = req.query;
 
-    const { data, error } = await getFlashcardsByLevel(level);
+    const { data, error } = await getFlashcardsByLevel(
+      level,
+      req.user.id
+    );
+
     if (error) throw error;
 
-    return successResponse(res, "Flashcards fetched", data);
+    const formatted = data.map(card => ({
+      id: card.id,
+      word: card.word,
+      meaning: card.meaning,
+      example: card.example,
+      level: card.level,
+      interval: card.flashcard_progress?.[0]?.interval || 1
+    }));
+
+    return successResponse(res, "Flashcards fetched", formatted);
   } catch (error) {
     next(error);
   }
@@ -17,34 +30,35 @@ export const fetchFlashcards = async (req, res, next) => {
 // Spaced repetition logic
 export const reviewFlashcard = async (req, res) => {
   const { flashcard_id, correct } = req.body;
+  const userId = req.user.id;
 
-  const { data, error } = await supabase
+  const { data: progress } = await supabase
     .from("flashcard_progress")
     .select("*")
     .eq("flashcard_id", flashcard_id)
-    .eq("user_id", req.user.id)
-    .single();
+    .eq("user_id", userId)
+    .maybeSingle(); // ✅ safe
 
-  if (error) return res.status(400).json({ success: false, message: error.message });
+  let interval = progress?.interval || 1;
 
-  let newInterval;
+  interval = correct ? interval * 2 : 1;
 
-  if (correct) {
-    newInterval = data.interval * 2; // double interval
+  const nextReview = new Date();
+  nextReview.setDate(nextReview.getDate() + interval);
+
+  if (!progress) {
+    await supabase.from("flashcard_progress").insert({
+      user_id: userId,
+      flashcard_id,
+      interval,
+      next_review: nextReview
+    });
   } else {
-    newInterval = 1; // reset if wrong
+    await supabase
+      .from("flashcard_progress")
+      .update({ interval, next_review: nextReview })
+      .eq("id", progress.id);
   }
 
-  const nextReviewDate = new Date();
-  nextReviewDate.setDate(nextReviewDate.getDate() + newInterval);
-
-  await supabase
-    .from("flashcard_progress")
-    .update({
-      interval: newInterval,
-      next_review: nextReviewDate
-    })
-    .eq("id", data.id);
-
-  return res.json({ success: true });
+  res.json({ success: true, interval });
 };

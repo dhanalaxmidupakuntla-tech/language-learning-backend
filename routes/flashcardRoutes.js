@@ -6,7 +6,7 @@ import {completeFlashcardSession} from "../controllers/progressController.js"
 const router = express.Router();
 
 router.get("/", authMiddleware, fetchFlashcards);
-router.post("/review", authMiddleware, reviewFlashcard);
+router.post("/flashcards/review", authMiddleware, reviewFlashcard);
 router.post("/flashcard-complete", authMiddleware, completeFlashcardSession);
 
 export default router;
