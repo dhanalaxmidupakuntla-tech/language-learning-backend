@@ -30,6 +30,7 @@ export const fetchFlashcards = async (req, res, next) => {
     next(error);
   }
 };
+
 // Spaced repetition logic
 export const reviewFlashcard = async (req, res) => {
   const { flashcard_id, correct } = req.body;
