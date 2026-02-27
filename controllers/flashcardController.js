@@ -18,7 +18,11 @@ export const fetchFlashcards = async (req, res, next) => {
       meaning: card.meaning,
       example: card.example,
       level: card.level,
-      interval: card.flashcard_progress?.[0]?.interval || 1
+      interval:
+        Array.isArray(card.flashcard_progress) &&
+        card.flashcard_progress.length > 0
+          ? card.flashcard_progress[0].interval
+          : 1
     }));
 
     return successResponse(res, "Flashcards fetched", formatted);
@@ -26,7 +30,6 @@ export const fetchFlashcards = async (req, res, next) => {
     next(error);
   }
 };
-
 // Spaced repetition logic
 export const reviewFlashcard = async (req, res) => {
   const { flashcard_id, correct } = req.body;
